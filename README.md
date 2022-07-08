@@ -19,7 +19,7 @@ fstring("{}, {}", "Hello","World"); // "Hello, World"
 // padding
 fstring("%5Hello%5World%5"); // "     Hello     World     "
 
-// smart padding, divide string to section, final padding = padding - length of section
+// smart padding, divide string to sections, final padding = padding - length of section
 fstring("%.10Hello.%%.10World.%"); // "Hello     World     "
 
 // result
@@ -27,7 +27,7 @@ fstring(..).get(); // return to &string
 ```
 
 ## Target
-- Provides an easy, fast and clean way to format strings
+- Providing an easy, fast and clean way to format strings
 
 - Providing the best performance for millions of times use
 
