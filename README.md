@@ -36,3 +36,4 @@ fstring(..).get(); // return to &string
 - **Processor**: Intel® Core™ i7-6500U CPU @ 2.50GHz × 4
 - **Compiler**: g++ 12
 - **Flags**: -O3
+- **C++ Version**: 23
