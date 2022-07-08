@@ -29,7 +29,7 @@ class fstring
     private:
     std::string src;
     std::size_t lpos = 0; // last postion for variables() function
-    std::vector<padd_vec> poss; // to remember positions befor formatting in padding()
+    std::vector<padd_vec> poss; // to remember positions before formatting in padding()
 
     protected:
 
