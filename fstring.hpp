@@ -1,6 +1,6 @@
 /**
  * @file    fstring.hpp
- * @brief   A quick C++ library to formatting
+ * @brief   A quick C++ formatting library
  * @version 0.1
  *
  * Copyright (c) 2022 Maysara Elshewehy (xeerx.com) (maysara.elshewehy@gmail.com)
