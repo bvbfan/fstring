@@ -1,5 +1,9 @@
 # C++ FString
- A quick C++ library to formatting
+**A quick C++ formatting library**
+
+I was working on a logging library, and needed some way to format strings quickly, simple and clean, so I wrote this library.
+
+This library is not the best in general, but for my project needs it is the fastest and the best
 
 ## Features
 - **Easy**  include and just call `fstring()`
