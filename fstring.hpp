@@ -5,7 +5,7 @@
  *
  * Copyright (c) 2022 Maysara Elshewehy (xeerx.com) (maysara.elshewehy@gmail.com)
  *
- * Distributed under the MIT License (MIT) 
+ * Distributed under the MIT License (MIT)
 */
 
 #pragma once
@@ -13,15 +13,15 @@
 #include <string>       // std::string
 #include <stdexcept>    // std::runtime_error
 #include <ctype.h>      // isdigit
+#include <utility>
 #include <vector>       // std::vector
 #include <algorithm>    // std::find
 
 // to save padding begin,end positions and value
-typedef struct padd_vec
+struct padd_vec
 {
     std::size_t begin, end, value;
-    padd_vec(std::size_t b,std::size_t e, std::size_t v) : begin{b}, end{e}, value{v} {}
-} padd_vec;
+};
 
 
 class fstring
@@ -34,46 +34,35 @@ class fstring
     protected:
 
     // find paddings in string and handle it
-    void padding() noexcept(false) 
+    void padding() noexcept(false)
     {
-        // init
-        std::size_t pos = 0, end = 0;
-
+        auto src_len = src.length();
         // handle
-        while(pos < src.length())
+        for (std::size_t pos = 0; pos < src_len; pos++)
         {
             // find '%'
-            if((pos = src.find('%',(pos == 0) ? 0 : pos+1)) == std::string::npos) break;
+            if((pos = src.find('%', pos)) == src.npos) break;
 
             // now we got the position of first "%", so increase position to get next character
-            std::size_t tmp = pos;  // save begin position
-            pos ++;
+            auto tmp = pos ++;  // save begin position
 
             // what if the character "%" is last character in the string ?
-            if(pos >= src.length()) break;
+            if(pos >= src_len) break;
 
             // find '.' : for smart padding (padding - length of section)
-            bool smart_padding = src.at(pos) == '.' ? true : false;
-            if(smart_padding) 
-            {
-                // increase position to get the next character after "%."
-                pos ++;
+            bool smart_padding = src[pos] == '.';
 
-                // what if the character '.' is last character in the string ?
-                if(pos >= src.length()) break;
-            }
+            // increase position to get the next character after "%."
+            if(smart_padding) pos ++;
 
             // find padding
-            ushort padd   = 0;    // to store padding value
-            ushort digits = 0;    // to store digits count
+            uint32_t padd  = 0;    // to store padding value
+            uint8_t digits = 0;    // to store digits count
 
-            while(pos < src.length())
+            while(pos < src_len && isdigit(src[pos]))
             {
-                // check if digit is number
-                if(!isdigit(src.at(pos))) break;
-
                 // get the number
-                ushort n = src.at(pos)-'0';
+                auto n = src[pos] - '0';
 
                 // if the first number is zero
                 if(!n && !padd) throw std::runtime_error("Padding can not be zero OR start with zero");
@@ -94,31 +83,32 @@ class fstring
             // smart padding: save positions to apply after putting the variables value
             if(smart_padding)
             {
+                std::size_t end;
                 // find ".%" : the end of section
-                if ((end = src.find(".%", pos)) == std::string::npos) throw std::runtime_error("smart padding must start by %. and ended by .%");
-                poss.push_back(padd_vec(tmp,end-4,padd));
-                
-                src.erase(end,2);        // erase ".%"
-                src.erase(tmp,digits+2); // erase "%.n"
+                if ((end = src.find(".%", pos)) == src.npos) throw std::runtime_error("smart padding must start by %. and ended by .%");
+                poss.push_back(padd_vec{tmp, end - 4, padd});
+
+                src.erase(end, 2);        // erase ".%"
+                src.erase(tmp, digits + 2); // erase "%.n"
             }
             // normal padding: apply
             else
             {
                 // erase %n
-                src.erase(tmp,digits+1); 
+                src.erase(tmp, digits + 1);
                 // add spaces(padding)
-                src.insert(tmp , std::string(padd, ' ')); 
+                src.insert(tmp, padd, ' ');
 
                 // update position to avoid searching in spaces area
-                pos += padd - (digits+1);
+                pos += padd - (digits + 1);
             }
         }
     }
 
     // apply smart padding
-    void apply  ()
+    void apply()
     {
-        for (auto i = poss.begin(); i < poss.end(); i++) 
+        for (auto i = poss.begin(); i < poss.end(); i++)
         {
             // get length of section
             std::size_t length = i->end - i->begin;
@@ -130,11 +120,11 @@ class fstring
                 std::size_t padd = i->value - length;
 
                 // add spaces(padding)
-                src.insert(i->end, std::string(padd, ' '));
+                src.insert(i->end, padd, ' ');
 
                 // now we updated the string value, so the length is updated
                 // so  we need to update the upcoming positions with: +=padd
-                for (auto t = i; t < poss.end(); t++) { t->begin += padd; t->end   += padd; }
+                for (auto t = i; t < poss.end(); t++) { t->begin += padd; t->end += padd; }
             }
         }
     }
@@ -147,30 +137,31 @@ class fstring
 
     // replace "{}" by values
     template<typename T>
-    void variables(T arg)
+    void variables(T&& arg)
     {
         //  to avoid error(out of range exception)
-        if(lpos == std::string::npos) return;
+        if(lpos == src.npos) return;
 
         // find "{}"
-        if ((lpos = src.find("{}", lpos)) == std::string::npos) return;
+        if ((lpos = src.find("{}", lpos)) == src.npos) return;
 
         // store arg value as string
-        std::string val = tostr(arg);
+        auto val = tostr(std::forward<T>(arg));
+        auto val_len = val.length();
 
         // save
-        src.erase(lpos,2);    // erase "{}"
-        src.insert(lpos,val); // add arg value in position of "{}"
+        src.erase(lpos, 2);    // erase "{}"
+        src.insert(lpos, val); // add arg value in position of "{}"
 
         // now we updated the string value, so the length is updated
         // so  we need to update the upcoming positions with: +=val.length()
-        for (auto i = poss.begin(); i < poss.end(); i++) 
+        for (auto i = poss.begin(); i < poss.end(); i++)
         {
             // skip values smaller than the lpos
             if(i->end <= lpos) continue;
 
             // increase
-            i->end   += val.length();
+            i->end   += val_len;
 
             // we cleared the "{}" characters so we need to go back 2 characters if possible
             if(i->end   > 2) i->end   -=2;
@@ -178,7 +169,7 @@ class fstring
             // begin of non-first
             if(i != poss.begin())
             {
-                i->begin += val.length();
+                i->begin += val_len;
                 if(i->begin > 2) i->begin -=2;
             }
         }
@@ -188,17 +179,17 @@ class fstring
 
     // constructor
     template<typename... T>
-    fstring(std::string _src, T&& ...args) : src{_src}
+    fstring(std::string _src, T&& ...args) : src{std::move(_src)}
     {
         // performance improvement, see: https://cplusplus.com/reference/vector/vector/reserve/
         poss.reserve(  5);
         src .reserve(250);
 
         padding();
-        ( variables(args) , ...);
+        ( variables(std::forward<T>(args)) , ...);
         apply  ();
     }
-    
+
     // get result
-    std::string& get(){ return src; } 
+    std::string& get(){ return src; }
 };
